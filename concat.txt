@@ -1,3 +1,10 @@
+## File Structure
+./
+    pybundle.py
+
+## Combined Code
+Module: pybundle.py
+
 #!.venv/bin/python
 
 import os
@@ -5,7 +12,7 @@ import tiktoken
 import fnmatch
 import logging
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 encoding = tiktoken.encoding_for_model("gpt-4")
 
@@ -15,30 +22,29 @@ def read_ignore_patterns():
     if os.path.exists(ignore_file):
         with open(ignore_file, 'r', encoding='utf-8') as file:
             lines = file.read().strip().split('\n')
-            patterns = []
-            for line in lines:
-                stripped_line = line.strip()
-                if not stripped_line:
-                    continue
-                # Add patterns for both directory and file matching
-                patterns.append(os.path.normpath(stripped_line) + '/*')  # Directory pattern
-                patterns.append(os.path.normpath(stripped_line))         # Exact file pattern
-                # Include patterns with './' prefix
-                patterns.append('./' + os.path.normpath(stripped_line) + '/*')  # Directory pattern with './'
-                patterns.append('./' + os.path.normpath(stripped_line))         # Exact file pattern with './'
+            # Create patterns considering both direct and './' prefixed matches
+            patterns = [os.path.normpath(line.strip()) + '/*' for line in lines if line.strip()]  # Direct pattern
+            patterns += ['./' + os.path.normpath(line.strip()) + '/*' for line in lines if line.strip()]  # './' prefixed pattern
         return default_patterns + patterns
     return default_patterns
 
 
 def should_ignore(path, patterns):
     # Normalize the path to remove any leading './'
-    normalized_path = os.path.normpath(path)
-    dot_slash_path = './' + normalized_path
-
+    normalized_path = os.path.normpath(path)  # This also handles other path anomalies like redundant separators.
+    
+    # Check patterns against the normalized path
     for pattern in patterns:
-        if fnmatch.fnmatch(normalized_path, pattern) or fnmatch.fnmatch(dot_slash_path, pattern):
-            logging.debug(f"Ignoring path {path} as it matches the pattern {pattern}")
+        if fnmatch.fnmatch(normalized_path, pattern):
+            logging.debug(f"Ignoring normalized path {normalized_path} as it matches the pattern {pattern}")
             return True
+        
+        # Additionally check against path that explicitly starts with './' to cover all bases
+        dot_slash_path = './' + normalized_path
+        if fnmatch.fnmatch(dot_slash_path, pattern):
+            logging.debug(f"Ignoring path {dot_slash_path} as it matches the pattern {pattern}")
+            return True
+
     return False
 
 
@@ -77,33 +83,30 @@ combined_code = ""
 
 # Retrieve both the file paths and their corresponding directory structures
 all_files_and_structures = list(get_python_files_and_structure('.', ignore_patterns))
-try:
-    file_structure, file_paths = zip(*all_files_and_structures)  # Separate the structure and paths
-    file_structure_output = '\n'.join(sum(file_structure, []))  # Flatten list
+file_structure, file_paths = zip(*all_files_and_structures)  # Separate the structure and paths
+file_structure_output = '\n'.join(sum(file_structure, []))  # Flatten list
 
-    for file_path in file_paths:
-        relative_path = os.path.relpath(file_path, start='.')
-        module_name = os.path.splitext(relative_path.replace(os.path.sep, '.'))[0]
+for file_path in file_paths:
+    relative_path = os.path.relpath(file_path, start='.')
+    module_name = os.path.splitext(relative_path.replace(os.path.sep, '.'))[0]
 
-        try:
-            file_content = read_file_content(file_path)
-        except UnicodeDecodeError as e:
-            print(e)
-            continue
+    try:
+        file_content = read_file_content(file_path)
+    except UnicodeDecodeError as e:
+        print(e)
+        continue
 
-        combined_code += f"Module: {module_name}.py\n\n{file_content}\n\n#######\n"
+    combined_code += f"Module: {module_name}.py\n\n{file_content}\n\n#######\n"
 
-    output_file_path = 'concat.txt'
-    with open(output_file_path, 'w', encoding='utf-8') as output_file:
-        output_file.write("## File Structure\n")
-        output_file.write(file_structure_output + "\n\n")
-        output_file.write("## Combined Code\n")
-        output_file.write(combined_code)
+output_file_path = 'concat.txt'
+with open(output_file_path, 'w', encoding='utf-8') as output_file:
+    output_file.write("## File Structure\n")
+    output_file.write(file_structure_output + "\n\n")
+    output_file.write("## Combined Code\n")
+    output_file.write(combined_code)
 
-    num_tokens = len(encoding.encode(combined_code))
-    print(f"Number of tokens: {num_tokens}")
+num_tokens = len(encoding.encode(combined_code))
+print(f"Number of tokens: {num_tokens}")
 
-except ValueError:
-    logging.error("No Python files were found to process. Please check your directory and ignore settings.")
-    # Optionally, write a message to a log file or standard output:
-    print("No files found to process.")
+
+#######
