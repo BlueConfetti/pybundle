@@ -2,6 +2,10 @@
 .env
 __pycache__
 output.txt
-__init__.py
 sub-test.py
 test.py
+build
+.bundleignore
+requirements.txt
+pybundle.egg-info
+test

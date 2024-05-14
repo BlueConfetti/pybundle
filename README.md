@@ -20,7 +20,7 @@ PyBundle is a Python utility designed to help developers understand and isolate 
 
 1. **Clone the repository:**
    ```bash
-   git clone https://your-repository-url/pybundle.git
+   git clone https://github.com/BlueConfetti/pybundle.git
    cd pybundle
    ```
 
@@ -32,7 +32,7 @@ PyBundle is a Python utility designed to help developers understand and isolate 
 
 3. **Install dependencies:**
    ```bash
-   pip install -r requirements.txt
+   pip install .
    ```
 
 ## Usage
@@ -40,7 +40,7 @@ PyBundle is a Python utility designed to help developers understand and isolate 
 Run PyBundle by specifying the target module and function directly from the command line. Ensure you activate the virtual environment if you've set one up.
 
 ```bash
-./pybundle.py module.submodule.function_name
+pybundle module.submodule.function_name
 ```
 
 ### Arguments
@@ -50,7 +50,7 @@ Run PyBundle by specifying the target module and function directly from the comm
 ### Example
 
 ```bash
-./pybundle.py test.sub-test.function_test
+pybundle test.sub-test.function_test
 ```
 
 This command will analyze the `function_test` function located within the `sub-test` module under the `test` directory, outputting only the files that are relevant to its execution.
