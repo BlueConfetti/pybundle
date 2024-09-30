@@ -9,3 +9,4 @@ build
 requirements.txt
 pybundle.egg-info
 test
+.DS_Store
